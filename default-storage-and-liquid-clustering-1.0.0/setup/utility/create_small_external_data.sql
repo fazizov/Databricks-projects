@@ -1,0 +1,109 @@
+-- Databricks notebook source
+-- MAGIC %md
+-- MAGIC Create small table **airlines_external** for the default storage data transfer demo.
+
+-- COMMAND ----------
+
+-- MAGIC %python
+-- MAGIC ## Create small external table
+-- MAGIC from pyspark.sql.types import StructType, StructField, IntegerType, StringType, LongType, DoubleType
+-- MAGIC
+-- MAGIC ## Check if table exists
+-- MAGIC airlines_final_exists = check_table_exists('tech_summit_data', 'default', 'airlines_final')
+-- MAGIC
+-- MAGIC if airlines_final_exists:
+-- MAGIC     print(f'Table airlines_final exists in the tech_summit_data catalog. Skip table creation.')
+-- MAGIC else:   ## create the table
+-- MAGIC     spark.sql(f'''
+-- MAGIC         CREATE TABLE IF NOT EXISTS {catalog_name}.{schema_name}.airlines_final (
+-- MAGIC         Year INT,
+-- MAGIC         Month INT,
+-- MAGIC         DayofMonth INT,
+-- MAGIC         DayOfWeek INT,
+-- MAGIC         DepTime STRING,
+-- MAGIC         CRSDepTime INT,
+-- MAGIC         ArrTime STRING,
+-- MAGIC         CRSArrTime INT,
+-- MAGIC         UniqueCarrier STRING,
+-- MAGIC         FlightNum INT,
+-- MAGIC         TailNum STRING,
+-- MAGIC         ActualElapsedTime STRING,
+-- MAGIC         CRSElapsedTime STRING,
+-- MAGIC         AirTime STRING,
+-- MAGIC         ArrDelay STRING,
+-- MAGIC         DepDelay STRING,
+-- MAGIC         Origin STRING,
+-- MAGIC         Dest STRING,
+-- MAGIC         Distance INT,
+-- MAGIC         TaxiIn STRING,
+-- MAGIC         TaxiOut STRING,
+-- MAGIC         Cancelled INT,
+-- MAGIC         CancellationCode STRING,
+-- MAGIC         Diverted INT,
+-- MAGIC         CarrierDelay STRING,
+-- MAGIC         WeatherDelay STRING,
+-- MAGIC         NASDelay STRING,
+-- MAGIC         SecurityDelay STRING,
+-- MAGIC         LateAircraftDelay STRING)
+-- MAGIC         USING delta
+-- MAGIC     ''')
+-- MAGIC
+-- MAGIC     # Define the schema
+-- MAGIC     schema = StructType([
+-- MAGIC         StructField("Year", IntegerType(), False),
+-- MAGIC         StructField("Month", IntegerType(), False),
+-- MAGIC         StructField("DayOfMonth", IntegerType(), False),
+-- MAGIC         StructField("DayOfWeek", IntegerType(), False),
+-- MAGIC         StructField("DepTime", StringType(), False),
+-- MAGIC         StructField("CRSDepTime", IntegerType(), False),
+-- MAGIC         StructField("ArrTime", StringType(), False),
+-- MAGIC         StructField("CRSArrTime", IntegerType(), False),
+-- MAGIC         StructField("UniqueCarrier", StringType(), False),
+-- MAGIC         StructField("FlightNum", IntegerType(), False),
+-- MAGIC         StructField("TailNum", StringType(), False),
+-- MAGIC         StructField("ActualElapsedTime", StringType(), False),
+-- MAGIC         StructField("CRSElapsedTime", StringType(), False),
+-- MAGIC         StructField("AirTime", StringType(), False),
+-- MAGIC         StructField("ArrDelay", StringType(), False),
+-- MAGIC         StructField("DepDelay", StringType(), False),
+-- MAGIC         StructField("Origin", StringType(), False),
+-- MAGIC         StructField("Dest", StringType(), False),
+-- MAGIC         StructField("Distance", IntegerType(), False),
+-- MAGIC         StructField("TaxiIn", StringType(), False),
+-- MAGIC         StructField("TaxiOut", StringType(), False),
+-- MAGIC         StructField("Cancelled", IntegerType(), False),
+-- MAGIC         StructField("CancellationCode", StringType(), True),
+-- MAGIC         StructField("Diverted", IntegerType(), False),
+-- MAGIC         StructField("CarrierDelay", StringType(), True),
+-- MAGIC         StructField("WeatherDelay", StringType(), True),
+-- MAGIC         StructField("NASDelay", StringType(), True),
+-- MAGIC         StructField("SecurityDelay", StringType(), True),
+-- MAGIC         StructField("LateAircraftDelay", StringType(), True),
+-- MAGIC     ])
+-- MAGIC
+-- MAGIC
+-- MAGIC
+-- MAGIC     small_data = [
+-- MAGIC         (2008, 1, 3, 4, '2003', 1955, '2211', 2225, 'WN', 335, 'N712SW', '128', '150', '116', '-14', '8', 'IAD', 'TPA', 810, '4', '8', 0, None, 0, 'NA', 'NA', 'NA', 'NA', 'NA'), 
+-- MAGIC         (2008, 1, 3, 4, '754', 735, '1002', 1000, 'WN', 3231, 'N772SW', '128', '145', '113', '2', '19', 'IAD', 'TPA', 810, '5', '10', 0, None, 0, 'NA', 'NA', 'NA', 'NA', 'NA'), 
+-- MAGIC         (2008, 1, 3, 4, '628', 620, '804', 750, 'WN', 448, 'N428WN', '96', '90', '76', '14', '8', 'IND', 'BWI', 515, '3', '17', 0, None, 0, 'NA', 'NA', 'NA', 'NA', 'NA'), 
+-- MAGIC         (2008, 1, 3, 4, '926', 930, '1054', 1100, 'WN', 1746, 'N612SW', '88', '90', '78', '-6', '-4', 'IND', 'BWI', 515, '3', '7', 0, None, 0, 'NA', 'NA', 'NA', 'NA', 'NA'), 
+-- MAGIC         (2008, 1, 3, 4, '1829', 1755, '1959', 1925, 'WN', 3920, 'N464WN', '90', '90', '77', '34', '34', 'IND', 'BWI', 515, '3', '10', 0, None, 0, '2', '0', '0', '0', '32'), 
+-- MAGIC         (2008, 1, 3, 4, '1940', 1915, '2121', 2110, 'WN', 378, 'N726SW', '101', '115', '87', '11', '25', 'IND', 'JAX', 688, '4', '10', 0, None, 0, 'NA', 'NA', 'NA', 'NA', 'NA'), 
+-- MAGIC         (2008, 1, 3, 4, '1937', 1830, '2037', 1940, 'WN', 509, 'N763SW', '240', '250', '230', '57', '67', 'IND', 'LAS', 1591, '3', '7', 0, None, 0, '10', '0', '0', '0', '47'), 
+-- MAGIC         (2008, 1, 3, 4, '1039', 1040, '1132', 1150, 'WN', 535, 'N428WN', '233', '250', '219', '-18', '-1', 'IND', 'LAS', 1591, '7', '7', 0, None, 0, 'NA', 'NA', 'NA', 'NA', 'NA'), 
+-- MAGIC         (2008, 1, 3, 4, '617', 615, '652', 650, 'WN', 11, 'N689SW', '95', '95', '70', '2', '2', 'IND', 'MCI', 451, '6', '19', 0, None, 0, 'NA', 'NA', 'NA', 'NA', 'NA'), 
+-- MAGIC         (2008, 1, 3, 4, '1620', 1620, '1639', 1655, 'WN', 810, 'N648SW', '79', '95', '70', '-16', '0', 'IND', 'MCI', 451, '3', '6', 0, None, 0, 'NA', 'NA', 'NA', 'NA', 'NA')
+-- MAGIC     ]
+-- MAGIC
+-- MAGIC     sdf_air_ext = spark.createDataFrame(small_data, schema=schema)
+-- MAGIC
+-- MAGIC     (sdf_air_ext
+-- MAGIC     .write
+-- MAGIC     .format("delta")
+-- MAGIC     .mode("append")
+-- MAGIC     .saveAsTable(f"{catalog_name}.{schema_name}.airlines_final")
+-- MAGIC     )
+-- MAGIC     print('Created the airlines_final table in the tech_summit_data catalog')
+-- MAGIC     
+-- MAGIC     del schema, sdf_air_ext

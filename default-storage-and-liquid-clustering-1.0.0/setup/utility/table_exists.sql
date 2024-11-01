@@ -1,0 +1,9 @@
+-- Databricks notebook source
+-- MAGIC %python
+-- MAGIC
+-- MAGIC def check_table_exists(catalog_name, schema_name, table_name):
+-- MAGIC
+-- MAGIC     result = spark.sql(f"SHOW TABLES IN {catalog_name}.{schema_name} LIKE '{table_name}'")
+-- MAGIC     table_exists = result.count() > 0
+-- MAGIC     
+-- MAGIC     return table_exists
