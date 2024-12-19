@@ -137,6 +137,11 @@ print(f"Vector Endpoint name: {vs_endpoint_name}. In case of any issues, replace
 
 # COMMAND ----------
 
+catalog_name="training"
+schema_name='fikrat'
+
+# COMMAND ----------
+
 from databricks.vector_search.client import VectorSearchClient
 from databricks.sdk import WorkspaceClient
 import databricks.sdk.service.catalog as c
@@ -148,13 +153,17 @@ vsc = VectorSearchClient(disable_notice=True)
 
 # IF YOU HAVE ENDPOINT CREATION PERMISSIONS, UNCOMMENT THIS CODE AND RUN IT TO CREATE AN ENDPOINT
 # if VECTOR_SEARCH_ENDPOINT_NAME not in [e['name'] for e in vsc.list_endpoints()['endpoints']]:
-#     vsc.create_endpoint(name=VECTOR_SEARCH_ENDPOINT_NAME, endpoint_type="STANDARD")
+vsc.create_endpoint(name=vs_endpoint_name, endpoint_type="STANDARD")
 
 # COMMAND ----------
 
 # check the status of the endpoint
 wait_for_vs_endpoint_to_be_ready(vsc, vs_endpoint_name)
 print(f"Endpoint named {vs_endpoint_name} is ready.")
+
+# COMMAND ----------
+
+# vs_endpoint_name='vs_endpoint_2'
 
 # COMMAND ----------
 
@@ -175,10 +184,10 @@ print(f"Endpoint named {vs_endpoint_name} is ready.")
 # COMMAND ----------
 
 #The table we'd like to index
-source_table_fullname = f"{DA.catalog_name}.{DA.schema_name}.pdf_text_embeddings"
+source_table_fullname = f"{catalog_name}.{schema_name}.pdf_text_embeddings"
 
 # Where we want to store our index
-vs_index_fullname = f"{DA.catalog_name}.{DA.schema_name}.pdf_text_self_managed_vs_index"
+vs_index_fullname = f"{catalog_name}.{schema_name}.pdf_text_self_managed_vs_index"
 
 # create or sync the index
 if not index_exists(vsc, vs_endpoint_name, vs_index_fullname):

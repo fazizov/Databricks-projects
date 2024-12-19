@@ -219,15 +219,21 @@ print(chain.invoke({"genre":"romance", "actor":"Brad Pitt"}))
 
 # COMMAND ----------
 
+catalog_name="training"
+schema_name='fikrat'
+
+# COMMAND ----------
+
 # Assign VS search endpoint by username
 vs_endpoint_prefix = "vs_endpoint_"
 vs_endpoint_fallback = "vs_endpoint_fallback"
-vs_endpoint_name = vs_endpoint_prefix+str(get_fixed_integer(DA.unique_name("_")))
+vs_endpoint_name = 'vs_endpoint_8'
+# vs_endpoint_prefix+str(get_fixed_integer(DA.unique_name("_")))
 print(f"Vector Endpoint name: {vs_endpoint_name}. In case of any issues, replace variable `vs_endpoint_name` with `vs_endpoint_fallback` in demos and labs.")
 
 # Source table and VS index table names
-vs_index_table_fullname = f"{DA.catalog_name}.{DA.schema_name}.dais_embeddings"
-source_table_fullname = f"{DA.catalog_name}.{DA.schema_name}.dais_text"
+vs_index_table_fullname = f"{catalog_name}.{schema_name}.dais_embeddings"
+source_table_fullname = f"{catalog_name}.{schema_name}.dais_text"
 
 # COMMAND ----------
 

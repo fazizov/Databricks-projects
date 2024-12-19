@@ -222,6 +222,11 @@ df = dataset["train"].to_pandas()
 
 # COMMAND ----------
 
+display(dataset['train'])
+df.head()
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ### Define the Brain and Tools
 # MAGIC
