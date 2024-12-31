@@ -5,17 +5,33 @@
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## File system commands
+
+# COMMAND ----------
+
+rootFolder="dbfs:/FileStore"
+tablePath='hive_metastore.default'
+
+# COMMAND ----------
+
+# DBTITLE 1,File system commands
+# MAGIC %fs
+# MAGIC ls dbfs:/FileStore
+
+# COMMAND ----------
+
+# DBTITLE 1,Using dbutils
+dbutils.fs.ls(rootFolder)
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Read/write structured flat files
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### Reading into dataframe
-
-# COMMAND ----------
-
-rootFolder="dbfs:/FileStore"
-tablePath='hive_metastore.default'
 
 # COMMAND ----------
 
@@ -59,7 +75,7 @@ display(dfs)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Read/Write Delta tables
+# MAGIC ## Read/Write Delta tables
 
 # COMMAND ----------
 
@@ -92,7 +108,12 @@ display(spark.sql(f'DESCRIBE TABLE EXTENDED {tablePath}.sales_bronze'))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Read/write semi-structured files
+# MAGIC ## Read/write semi-structured files
+
+# COMMAND ----------
+
+rootFolder="dbfs:/FileStore"
+tablePath='hive_metastore.default'
 
 # COMMAND ----------
 
@@ -183,6 +204,11 @@ display(dfs.drop("client_name"))
 
 # COMMAND ----------
 
+rootFolder="dbfs:/FileStore"
+tablePath='hive_metastore.default'
+
+# COMMAND ----------
+
 # DBTITLE 1,Using withColumn with sql functions
 from pyspark.sql.functions import round,cast,col,lit,input_file_name,monotonically_increasing_id,when
 dfs3=dfs.withColumn('TaxesAmount', round(dfs.sales_amount * 1.13))\
@@ -208,7 +234,7 @@ display(dfps)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Table transformations
+# MAGIC # Table transformations
 
 # COMMAND ----------
 
@@ -234,7 +260,7 @@ display(dfs4)
 
 # COMMAND ----------
 
-# DBTITLE 1,Null check
+# DBTITLE 1,Null checks
 dfs4=dfs.where(col('product_name').isNotNull())
 display(dfs4)
 
@@ -273,11 +299,13 @@ display(dfs.orderBy(['product_name','sales_amount'], ascending=False))
 
 # COMMAND ----------
 
+tablePath='hive_metastore.default'
 dfp=spark.table(f'{tablePath}.product_silver')
 dfs=spark.table(f'{tablePath}.sales_bronze')
 
 # COMMAND ----------
 
+# DBTITLE 1,Joins on common column name
 dfsp=dfs.join(dfp,"product_name","left")\
     .select(dfs.sales_date,dfs.client_name,dfs.price,dfs.quantity,dfs.sales_amount,
             dfs.product_name,dfp.room_type,dfp.color)
@@ -299,6 +327,7 @@ display(dfsp)
 # COMMAND ----------
 
 # DBTITLE 1,Aggregates on entire table
+tablePath='hive_metastore.default'
 dfs=spark.table(f'{tablePath}.sales_bronze')
 print(dfs.count())
 
@@ -328,6 +357,7 @@ display(dfsa)
 
 # COMMAND ----------
 
+tablePath='hive_metastore.default'
 dfs=spark.table(f'{tablePath}.sales_bronze')
 
 # COMMAND ----------
@@ -353,7 +383,7 @@ display(dfspw)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Temporary views
+# MAGIC # Temporary/Global views
 
 # COMMAND ----------
 
@@ -361,13 +391,19 @@ dfs=spark.table(f'{tablePath}.sales_bronze')
 
 # COMMAND ----------
 
+# DBTITLE 1,Create temporary views
 dfs.createOrReplaceTempView("dfs_temp")
 display(sql("SELECT * FROM dfs_temp"))
 
 # COMMAND ----------
 
+# DBTITLE 1,Create global views
+dfs.createOrReplaceGlobalTempView
+
+# COMMAND ----------
+
 # MAGIC %md
-# MAGIC ## Functions
+# MAGIC # Functions
 
 # COMMAND ----------
 
@@ -503,7 +539,7 @@ display(spark.table(f'{tablePath}.product_silver1'))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC # Using table DDLs and auto-generated columns
+# MAGIC # Finer table structure commands
 
 # COMMAND ----------
 
@@ -534,7 +570,7 @@ dfp.write.mode('overwrite')\
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC # Using Delta APIs
+# MAGIC # Using Delta APIs for advanced ingestion logic
 # MAGIC (See https://docs.delta.io/latest/api/python/spark/index.html for more details)
 
 # COMMAND ----------

@@ -1,132 +1,5 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Dataframe read/write APIs
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Read/write structured flat files
-
-# COMMAND ----------
-
-rootFolder="dbfs:/FileStore"
-tablePath='hive_metastore.default'
-
-# COMMAND ----------
-
-# DBTITLE 1,Using common source-specific options
-dfs=spark.read.format('csv')\
-  .option('header','true')\
-  .option('inferSchema','true')\
-  .option('delimiter',',')\
-  .load(f'{rootFolder}/sales_data.csv')
-display(dfs)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Read/Write Delta tables
-
-# COMMAND ----------
-
-# DBTITLE 1,Writing to Delta tables: append mode
-tablePath='hive_metastore.default'
-dfs.write.format('delta').mode('append').saveAsTable(f'{tablePath}.sales_bronze')
-
-# COMMAND ----------
-
-# DBTITLE 1,Using save method
-dfs.write.format('delta').mode('append').save('dbfs:/user/hive/warehouse/sales_bronze2')
-
-# COMMAND ----------
-
-# DBTITLE 1,Reading from Delta tables
-dfs=spark.table(f'{tablePath}.sales_bronze')
-display(dfs)
-
-# COMMAND ----------
-
-# DBTITLE 1,Executing SQL queries
-dfs=spark.sql(f'Select * from {tablePath}.sales_bronze')
-display(dfs)
-
-# COMMAND ----------
-
-# DBTITLE 1,Querying table metadata
-display(spark.sql(f'DESCRIBE TABLE EXTENDED {tablePath}.sales_bronze'))
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Read/write semi-structured files
-
-# COMMAND ----------
-
-# DBTITLE 1,Exploring file content
-dbutils.fs.head(f'{rootFolder}/product_data2.json')
-
-# COMMAND ----------
-
-# DBTITLE 1,Schema inference
-dfp=spark.read.format('json')\
-    .option("multiLine", True)\
-    .option("inferSchema", True)\
-    .load(f'{rootFolder}/product_data2.json')
-display(dfp)
-
-# COMMAND ----------
-
-# DBTITLE 1,Providing explicit schema
-from pyspark.sql.types import *
-json_schema = StructType([StructField("product_name", StringType(), True),\
-    StructField("color", StringType(), True),
-    StructField("category", 
-                StructType([StructField("furniture_type", StringType(), True),
-                           StructField("room_type", StringType(), True)]), True)
-    ]                         )        
-dfp=spark.read.format('json')\
-    .option("multiLine", True)\
-    .schema(json_schema)\
-    .load(f'{rootFolder}/product_data2.json')
-
-display(dfp)
-
-# COMMAND ----------
-
-# DBTITLE 1,Writing to Delta tables: overwrite mode
-dfp.write.format('delta').mode('overwrite').saveAsTable(f'{tablePath}.product_bronze')    
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC # Column transformations
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ###Selecting subset of columns
-
-# COMMAND ----------
-
-rootFolder="dbfs:/FileStore"
-tablePath='hive_metastore.default'
-
-dfs=spark.read.format('csv')\
-  .option('header','true')\
-  .option('inferSchema','true')\
-  .option('delimiter',',')\
-  .load(f'{rootFolder}/sales_data.csv')
-
-# COMMAND ----------
-
-# DBTITLE 1,select method
-from pyspark.sql.functions import col
-dfs1=dfs.select('product_name','sales_date','client_name',col('sales_amount').alias('SalesAmount'))
-display(dfs1)
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC # Exercises
 
 # COMMAND ----------
@@ -138,25 +11,12 @@ display(dfs1)
 # MAGIC - Add metadata columns for source file name and ingestion timestamp
 # MAGIC - Add sales month and year columns
 # MAGIC - Add sequential ID column
-# MAGIC - Add column with the difference between previous and current sales for the same product, based on sales dates
+# MAGIC - Calculate difference between previous and current sales for the same product, based on sales dates
 # MAGIC - Create temp view named vw_sales_silver based on this dataframe
 
 # COMMAND ----------
 
-spark.read.format('csv')\
-  .option('header','true')\
-  .option('inferSchema','true')\
-  .option('delimiter',',')\
-  .load(f'{rootFolder}/sales_data.csv')\
-  .selectExpr("product_name as ProductName",
-                      "sales_date as SalesDate",
-                      "client_name as ClientName",
-                      "cast(price as decimal(10,2))as Price",
-                      "quantity as Quantity",
-                      "cast(sales_amount as decimal(10,2)) as SalesAmount", 
-                      "round(sales_amount * 1.13,2) as TaxesAmount",
-                      "_metadata['file_name'] as SourceFileName")    
-display(dfs2)
+
 
 # COMMAND ----------
 
@@ -169,19 +29,26 @@ display(dfs2)
 
 # COMMAND ----------
 
+
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC **Join and aggregate**
 # MAGIC TO DO:
 # MAGIC - Read from product_silver and vw_sales_silver
 # MAGIC - Join 2 dataframes using inner join type
-# MAGIC - Filer out all rows that have empty values in any column
+# MAGIC - Filter out all rows that have empty values in any column
 # MAGIC - Keep only sales related to office category  
-# MAGIC - Calculate total, max and min of sales amounts per product, year and month
+# MAGIC - Calculate total, max and min of sales amounts per product furniture type, year and month
+# MAGIC - Create a temp view named vw_sales_aggregates
 
 # COMMAND ----------
 
 # DBTITLE 1,Using drop method
-display(dfs.drop("client_name"))
+# MAGIC %md
+# MAGIC TO DO:
+# MAGIC
 
 # COMMAND ----------
 

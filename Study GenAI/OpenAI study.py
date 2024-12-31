@@ -4,8 +4,8 @@ pip install openai
 # COMMAND ----------
 
 # MAGIC %sh
-# MAGIC export AZURE_OPENAI_API_KEY=1bd3d9b50afd4fd896cfa5a3eac8eecb
-# MAGIC export AZURE_OPENAI_ENDPOINT=https://generative-ai-bootcamp.openai.azure.com/
+# MAGIC export AZURE_OPENAI_API_KEY=
+# MAGIC export AZURE_OPENAI_ENDPOINT=
 
 # COMMAND ----------
 
