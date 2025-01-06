@@ -5,7 +5,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## File system commands
+# MAGIC ## File system commands (https://docs.databricks.com/en/files/index.html)
 
 # COMMAND ----------
 
@@ -99,6 +99,11 @@ display(dfs)
 # DBTITLE 1,Executing SQL queries
 dfs=spark.sql(f'Select * from {tablePath}.sales_bronze')
 display(dfs)
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC select * from hive_metastore.default.sales_bronze
 
 # COMMAND ----------
 
@@ -212,7 +217,7 @@ tablePath='hive_metastore.default'
 # DBTITLE 1,Using withColumn with sql functions
 from pyspark.sql.functions import round,cast,col,lit,input_file_name,monotonically_increasing_id,when
 dfs3=dfs.withColumn('TaxesAmount', round(dfs.sales_amount * 1.13))\
-    .withColumn('SalesAmount', col('sales_amount').cast('decimal(10,2)').alias('SalesAmount'))\
+    .withColumn('SalesAmount', col('sales_amount').cast('decimal(10,2)'))\
     .withColumn('FixedStr', lit('Fixed'))\
     .withColumn('RowID', monotonically_increasing_id())\
     .withColumn('product_category', when(col('product_name') == 'Bed', 'Bedroom').otherwise('LivingRoom'))    
@@ -398,7 +403,7 @@ display(sql("SELECT * FROM dfs_temp"))
 # COMMAND ----------
 
 # DBTITLE 1,Create global views
-dfs.createOrReplaceGlobalTempView
+dfs.createOrReplaceGlobalTempView("dfs_global_view")
 
 # COMMAND ----------
 
@@ -420,7 +425,7 @@ display(df)
 
 # COMMAND ----------
 
-# DBTITLE 1,Scalar UDF
+# DBTITLE 1,Python scalar UDFs
 @udf
 def tax_udf1(p_price,p_quantity):
     return p_price*p_quantity*0.13
@@ -512,14 +517,14 @@ display(dfscp)
 
 tablePath='hive_metastore.default'
 dfp=spark.table(f'{tablePath}.product_silver')
-dfp.select('product_name').write.mode('append').saveAsTable(f'{tablePath}.product_silver1')
+dfp.select('product_name').write.mode('append').saveAsTable(f'{tablePath}.product_silver2')
 
 # COMMAND ----------
 
 # DBTITLE 1,Schema mismatch error
 dfp.select('product_name','color','furniture_type','room_type')\
     .write.mode('append')\
-    .saveAsTable(f'{tablePath}.product_silver1')
+    .saveAsTable(f'{tablePath}.product_silver2')
 
 # COMMAND ----------
 
@@ -527,9 +532,9 @@ dfp.select('product_name','color','furniture_type','room_type')\
 dfp.select('product_name','color','furniture_type','room_type')\
     .write.mode('append')\
     .option("mergeSchema", "true")\
-    .saveAsTable(f'{tablePath}.product_silver1')
+    .saveAsTable(f'{tablePath}.product_silver2')
 
-display(spark.table(f'{tablePath}.product_silver1'))
+display(spark.table(f'{tablePath}.product_silver2'))
 
 # COMMAND ----------
 
@@ -543,7 +548,7 @@ display(spark.table(f'{tablePath}.product_silver1'))
 
 # COMMAND ----------
 
-dfp=spark.table(f'{tablePath}.product_silver')
+dfp=spark.table(f'{tablePath}.product_silver').drop("product_id")
 
 # COMMAND ----------
 
@@ -610,7 +615,7 @@ deltaTableTrg.delete(condition="color='White'")
 deltaTableTrg.alias('T').merge(
     source=srcdf.alias('S'),condition="T.product_name=S.product_name")\
     .whenMatchedUpdateAll()\
-    .whenNotMatchedInsertAll
+    .whenNotMatchedInsertAll()
         
 
 
@@ -686,18 +691,13 @@ display(dsfcm1)
 
 # COMMAND ----------
 
-# DBTITLE 1,NA's on some columns
+# DBTITLE 1,NA's in some columns
 dsfcm1=dfsc.na.drop(subset=['product_name','client_name'])
 display(dsfcm1)
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ### Replacing missing values
-
-# COMMAND ----------
-
-# DBTITLE 1,Filling with specific values
+# DBTITLE 1,Replacing missing values with specific values
 dsfcm1=dfsc.na.fill({'product_name': 'Unknown','sales_amount':0})
 display(dsfcm1)
 
@@ -717,7 +717,8 @@ sqlCmd=f""" CREATE OR REPLACE TABLE  {tablePath}.date_dim (
               month_name STRING GENERATED ALWAYS AS (date_format(date_value,'MMM')),
               year INT GENERATED ALWAYS AS (year(date_value))
                ) """ 
-spark.sql(sqlCmd) 
+spark.sql(sqlCmd)
+ 
 
 
 # COMMAND ----------
@@ -761,7 +762,12 @@ display(spark.sql(f"DESCRIBE HISTORY {tablePath}.product_silver"))
 
 # COMMAND ----------
 
-# DBTITLE 1,Restore table to one of previous versions
+# DBTITLE 1,Querying earlier versions of table
+display(spark.sql(f'SELECT * FROM {tablePath}.product_silver VERSION AS OF 3' ))
+
+# COMMAND ----------
+
+# DBTITLE 1,Restore table to earlier version
 spark.sql(f"RESTORE TABLE {tablePath}.product_silver TO VERSION AS OF 3")
 
 # COMMAND ----------
