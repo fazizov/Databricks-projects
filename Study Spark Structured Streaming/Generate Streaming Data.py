@@ -7,15 +7,21 @@ import json
 
 # COMMAND ----------
 
-# MAGIC %fs
-# MAGIC ls
+dbutils.fs.rm('/Volumes/learn_adb_fikrat/bronze/landing/office',True)
+dbutils.fs.rm('/Volumes/learn_adb_fikrat/bronze/landing/sensor',True)
+dbutils.fs.rm('/Volumes/learn_adb_fikrat/bronze/landing/weather',True)
+
+dbutils.fs.mkdirs('/Volumes/learn_adb_fikrat/bronze/landing/office')
+dbutils.fs.mkdirs('/Volumes/learn_adb_fikrat/bronze/landing/sensor')
+dbutils.fs.mkdirs('/Volumes/learn_adb_fikrat/bronze/landing/weather')
+
 
 # COMMAND ----------
 
 import os
 
 def generate_measurements(start_date, end_date):
-    date_range = pd.date_range(start=start_date, end=end_date, freq='H')
+    date_range = pd.date_range(start=start_date, end=end_date, freq='min')
     data = []
     
     for date in date_range:
@@ -41,54 +47,64 @@ def generate_weather_forecats(start_date, end_date):
 
 def generate_sensor_data(start_date, end_date):
     measurements = generate_measurements(start_date, end_date)
-    df = pd.DataFrame(measurements, columns=['Timestamp', 'Office', 'Sensor', 'Measurement', 'Value'])
-    dfs=spark.createDataFrame(df).withColumn('Timestamp',col('Timestamp').cast('string'))
-    dfagg=dfs.groupBy('Timestamp','Office')\
+    df = pd.DataFrame(measurements, columns=['EventTime', 'Office', 'Sensor', 'Measurement', 'Value'])
+    dfs=spark.createDataFrame(df).withColumn('EventTime',col('EventTime').cast('string'))
+    dfagg=dfs.groupBy('EventTime','Office')\
         .agg(collect_list(struct("Sensor", "Measurement", "Value"))\
         .alias("Measurements"))
     return dfagg
 
 def generate_weather_data(start_date, end_date):
     measurements = generate_weather_forecats(start_date, end_date)
-    df = pd.DataFrame(measurements, columns=['Timestamp','City','Temperature'])
-    dfs=spark.createDataFrame(df).withColumn('Timestamp',col('Timestamp').cast('string'))
+    df = pd.DataFrame(measurements, columns=['EventTime','City','Temperature'])
+    dfs=spark.createDataFrame(df).withColumn('EventTime',col('EventTime').cast('string'))
     return dfs
+
 
 def generate_data(start_date, end_date,root_data_folder):
     dfs=generate_sensor_data(start_date, end_date)
-    shifted_start_date = start_date + timedelta(minutes=3)
-    shifted_end_date = end_date + timedelta(minutes=3)
+    shifted_start_date = start_date + timedelta(seconds=5)
+    shifted_end_date = end_date + timedelta(seconds=5)
     dfw=generate_weather_data(shifted_start_date, shifted_end_date)
-    dfw=generate_json_data(dfs,dfw,f'{root_data_folder}/sensor',f'{root_data_folder}/weather')       
+    dfs=generate_sensor_data(start_date, end_date)
+    write_json_data(dfs,dfw,f'{root_data_folder}/sensor',f'{root_data_folder}/weather')       
 
-def generate_json_data(df_sensor,df_weather,sensor_folder,weather_folder):
+def write_json_data(df_sensor,df_weather,sensor_folder,weather_folder):
     for row in df_sensor.collect():
-        rowDict={'Timestamp':row.Timestamp,'Office':row.Office,
+        rowDict={'EventTime':row.EventTime,'Office':row.Office,
                  'Measurements':{'Sensor':row.Measurements[0].Sensor, 'MeasurementType':row.Measurements[0].Measurement, 'MeasurementValue':row.Measurements[0].Value}}
-        file_path=f"{sensor_folder}/{rowDict['Office']}_{rowDict['Timestamp']}.json"
+        file_path=f"{sensor_folder}/{rowDict['Office']}_{rowDict['EventTime']}.json"
         with open(file_path, 'w') as f:
             json.dump(rowDict,f)
         print (f'File written to {file_path}')
     for row in df_weather.collect():
         rowDict=row.asDict()
-        file_path=f"{weather_folder}/{rowDict['City']}_{rowDict['Timestamp']}.json"
+        file_path=f"{weather_folder}/{rowDict['City']}_{rowDict['EventTime']}.json"
         with open(file_path, 'w') as f:
             json.dump(rowDict,f)
         print (f'File written to {file_path}')            
+    pass
 
-    pass    
+def generate_persist_office_data(root_data_folder):
+    file_path=f'{root_data_folder}/office'
+    data = []
+    city_list= ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix']
+    for office in range(1, 6):
+        data.append([f'Office {office}', city_list[office-1]])
+    df=spark.createDataFrame(data,['Office','City'])
+    df.write.format('csv').mode('overwrite').option('header','true').save(file_path)
+    pass
+
+def gernerate_persist_streaming_data(start_date, ndays,root_folder):
+    end_date = start_date + timedelta(days=ndays)
+    generate_persist_office_data(root_folder)
+    generate_data(start_date, end_date,root_folder)
+    pass
 
 
 # COMMAND ----------
 
-start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-end_date = start_date + timedelta(days=7)
-# generate_sensor_data(start_date, end_date,'/Volumes/learn_adb_fikrat/default/landing')
-# generate_sensor_data(start_date, end_date,'data')
-dbutils.fs.mkdirs('/Volumes/learn_adb_fikrat/bronze/landing/sensor')
-dbutils.fs.mkdirs('/Volumes/learn_adb_fikrat/bronze/landing/weather')
-generate_data(start_date, end_date,'/Volumes/learn_adb_fikrat/bronze/landing')
-
+gernerate_persist_streaming_data(datetime(2025, 1, 10),1,'/Volumes/learn_adb_fikrat/bronze/landing')
 
 # COMMAND ----------
 
@@ -96,6 +112,11 @@ start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 end_date = start_date + timedelta(minutes=3)
 print (start_date, end_date)
 
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC
 
 # COMMAND ----------
 
