@@ -4,21 +4,17 @@ import pandas as pd
 from datetime import datetime, timedelta
 from pyspark.sql.functions import col,struct,collect_list
 import json
-
-# COMMAND ----------
-
-dbutils.fs.rm('/Volumes/learn_adb_fikrat/bronze/landing/office',True)
-dbutils.fs.rm('/Volumes/learn_adb_fikrat/bronze/landing/sensor',True)
-dbutils.fs.rm('/Volumes/learn_adb_fikrat/bronze/landing/weather',True)
-
-dbutils.fs.mkdirs('/Volumes/learn_adb_fikrat/bronze/landing/office')
-dbutils.fs.mkdirs('/Volumes/learn_adb_fikrat/bronze/landing/sensor')
-dbutils.fs.mkdirs('/Volumes/learn_adb_fikrat/bronze/landing/weather')
-
-
-# COMMAND ----------
-
 import os
+
+# COMMAND ----------
+
+def prepare_data(root_data_folder):
+    dbutils.fs.rm(f'{root_data_folder}',True)
+    #create folders
+    dbutils.fs.mkdirs(f'{root_data_folder}/office')
+    dbutils.fs.mkdirs(f'{root_data_folder}/sensor')
+    dbutils.fs.mkdirs(f'{root_data_folder}/weather')
+    pass
 
 def generate_measurements(start_date, end_date):
     date_range = pd.date_range(start=start_date, end=end_date, freq='min')
@@ -104,86 +100,10 @@ def gernerate_persist_streaming_data(start_date, ndays,root_folder):
 
 # COMMAND ----------
 
-gernerate_persist_streaming_data(datetime(2025, 1, 10),1,'/Volumes/learn_adb_fikrat/bronze/landing')
-
-# COMMAND ----------
-
-start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-end_date = start_date + timedelta(minutes=3)
-print (start_date, end_date)
-
+# DBTITLE 1,Generate 1 day events
+gernerate_persist_streaming_data(datetime(2025, 2, 27),1,'/Volumes/learn_adb_fikrat/bronze/landing')
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC
-
-# COMMAND ----------
-
-start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-end_date = start_date + timedelta(days=7)
-generate_weather_data(start_date, end_date,'/Volumes/learn_adb_fikrat/default/landing/weather')
-
-# COMMAND ----------
-
-import json
-for row in dfagg.limit(5).collect():
-    rowDict=row.asDict()
-    fileName=f"./data/{rowDict['Office']}_{rowDict['Timestamp']}.json"
-    with open(fileName, 'w') as f:
-        json.dump(rowDict,f)
-
-# COMMAND ----------
-
-# DBTITLE 1,epad
-from pyspark.sql.functions import collect_list, struct
-
-# Initialize Spark session
-
-# Sample data
-data = [
-    ("Office1", "2025-01-01 00:00:00", "Sensor1", "Temperature", 22.5),
-    ("Office1", "2025-01-01 00:00:00", "Sensor2", "Humidity", 45),
-    ("Office1", "2025-01-01 01:00:00", "Sensor1", "Temperature", 23.0),
-    ("Office1", "2025-01-01 01:00:00", "Sensor2", "Humidity", 40),
-    ("Office2", "2025-01-01 00:00:00", "Sensor1", "Temperature", 21.5),
-    ("Office2", "2025-01-01 00:00:00", "Sensor2", "Humidity", 50),
-    # Add more data as needed
-]
-
-# Create DataFrame
-from pyspark.sql.types import StructType, StructField, StringType, DoubleType, TimestampType
-
-schema = StructType([StructField("Office", StringType(), True), StructField("Timestamp", StringType(), True), StructField("Sensor", StringType(), True), StructField("MeasureType", StringType(), True), StructField("MeasureValue", DoubleType(), True)])
-df = spark.createDataFrame(data, schema)
-
-# Group by Office and Timestamp, and collect measurements into a list
-df_grouped = df.groupBy("Office", "Timestamp").agg(
-    collect_list(struct("Sensor", "MeasureType", "MeasureValue")).alias("Measurements")
-)
-
-# Convert to JSON format
-json_data = df_grouped.toJSON().collect()
-
-# Print JSON data
-for item in json_data:
-    print(item)
-
-
-# COMMAND ----------
-
-display(df_grouped)
-
-# COMMAND ----------
-
-jsondata=Row(Timestamp='2025-01-08 17:00:00', Office='Office 3', Measurements=[Row(Sensor='Sensor 1', Measurement='temperature', Value=21.39), Row(Sensor='Sensor 1', Measurement='humidity', Value=48.58), Row(Sensor='Sensor 2', Measurement='temperature', Value=20.24), Row(Sensor='Sensor 2', Measurement='humidity', Value=47.87)])"
-fileName=f"./data/test.json"
-jsondict=jsondata.asDict()
-with open(fileName, 'w') as f:
-       json.dumps(jsondict,4)
-
-
-
-# COMMAND ----------
-
-
