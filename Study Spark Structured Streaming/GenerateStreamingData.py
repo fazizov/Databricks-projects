@@ -14,6 +14,8 @@ def prepare_data(root_data_folder):
     dbutils.fs.mkdirs(f'{root_data_folder}/office')
     dbutils.fs.mkdirs(f'{root_data_folder}/sensor')
     dbutils.fs.mkdirs(f'{root_data_folder}/weather')
+    dbutils.fs.mkdirs(f'{root_data_folder}/iot_agg')
+    dbutils.fs.mkdirs(f'{root_data_folder}/archive')
     pass
 
 def generate_measurements(start_date, end_date):
@@ -100,8 +102,21 @@ def gernerate_persist_streaming_data(start_date, ndays,root_folder):
 
 # COMMAND ----------
 
+root_folder='/Volumes/learn_adb_fikrat/bronze/landing'
+
+# COMMAND ----------
+
+prepare_data(root_folder)
+
+# COMMAND ----------
+
 # DBTITLE 1,Generate 1 day events
-gernerate_persist_streaming_data(datetime(2025, 2, 27),1,'/Volumes/learn_adb_fikrat/bronze/landing')
+gernerate_persist_streaming_data(datetime(2025, 1, 2),1,root_folder)
+
+# COMMAND ----------
+
+file_count = len(dbutils.fs.ls(f'{root_data_folder}/sensor'))
+print(file_count)
 
 # COMMAND ----------
 
