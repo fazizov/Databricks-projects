@@ -111,7 +111,7 @@ prepare_data(root_folder)
 # COMMAND ----------
 
 # DBTITLE 1,Generate 1 day events
-gernerate_persist_streaming_data(datetime(2025, 1, 2),1,root_folder)
+gernerate_persist_streaming_data(datetime(2025, 1, 5),2,root_folder)
 
 # COMMAND ----------
 
