@@ -36,7 +36,8 @@ def generate_sensor_data(start_date, end_date,eh_conn_str,eh_name,checkpoint_pat
         .write.mode("append").saveAsTable(temp_table_name)
     dfstm = spark.readStream.table('bronze.iot_measurements_tmp')
     dfstm.withColumn('body',F.to_json(F.struct(*dfstm.columns)))\
-        .select('body')\
+        .withColumn("partitionKey",F.col('Office'))\
+        .select('body',"partitionKey")\
         .writeStream.format("eventhubs")\
         .options(**ehConf)\
         .option("checkpointLocation", checkpoint_path)\
