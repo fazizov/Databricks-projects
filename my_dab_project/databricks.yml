@@ -1,0 +1,42 @@
+# This is a Databricks asset bundle definition for my_dab_project.
+# See https://docs.databricks.com/dev-tools/bundles/index.html for documentation.
+bundle:
+  name: my_dab_project
+  uuid: 1f0fe30f-c22b-492a-8845-16b8e6f13afa
+
+include:
+  - resources/*.yml
+  - resources/*/*.yml
+
+# Variable declarations. These variables are assigned in the dev/prod targets below.
+variables:
+  catalog:
+    description: The catalog to use
+  schema:
+    description: The schema to use
+
+targets:
+  dev:
+    # The default target uses 'mode: development' to create a development copy.
+    # - Deployed resources get prefixed with '[dev my_user_name]'
+    # - Any job schedules and triggers are paused by default.
+    # See also https://docs.databricks.com/dev-tools/bundles/deployment-modes.html.
+    mode: development
+    default: true
+    workspace:
+      host: https://adb-2052423850922793.13.azuredatabricks.net
+    variables:
+      catalog: learn_adb_fikrat
+      schema: ${workspace.current_user.short_name}
+  prod:
+    mode: production
+    workspace:
+      host: https://adb-2052423850922793.13.azuredatabricks.net
+      # We explicitly deploy to /Workspace/Users/fikrat.azizov@slalom.com to make sure we only have a single copy.
+      root_path: /Workspace/Users/fikrat.azizov@slalom.com/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      catalog: learn_adb_fikrat
+      schema: prod
+    permissions:
+      - user_name: fikrat.azizov@slalom.com
+        level: CAN_MANAGE

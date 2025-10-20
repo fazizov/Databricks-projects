@@ -1,0 +1,14 @@
+# The main pipeline for my_dab_project
+
+resources:
+  pipelines:
+    dab_project_etl:
+      name: dab_project_etl
+      catalog: ${var.catalog}
+      schema: ${var.schema}
+      serverless: true
+      root_path: "."
+
+      libraries:
+        - glob:
+            include: transformations/**

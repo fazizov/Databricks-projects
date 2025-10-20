@@ -17,6 +17,25 @@ def prepare_data(root_data_folder):
     dbutils.fs.mkdirs(f'{root_data_folder}/iot_agg')
     dbutils.fs.mkdirs(f'{root_data_folder}/archive')
     pass
+def drop_all_tables():
+    spark.sql("DROP TABLE IF EXISTS bronze.iot_measurements_autoloader")
+    spark.sql("DROP TABLE IF EXISTS bronze.iot_measurements_autoloader1")
+    spark.sql("DROP TABLE IF EXISTS bronze.iot_measurements_autoloader2")
+    spark.sql("DROP TABLE IF EXISTS bronze.iot_measurements_autoloader3")
+    spark.sql("DROP TABLE IF EXISTS bronze.iot_measurements_autoloader4")
+
+def reset_checkpoints(checkpoint_path_sensor,schema_path_sensor):
+    dbutils.fs.rm(checkpoint_path_sensor, True)
+    dbutils.fs.rm(schema_path_sensor, True)
+    dbutils.fs.rm(checkpoint_path_sensor1, True)
+    dbutils.fs.rm(checkpoint_path_sensor2, True)
+    dbutils.fs.rm(checkpoint_path_sensor3, True)
+    dbutils.fs.rm(checkpoint_path_sensor4, True)
+
+def reset_environment(checkpoint_path_sensor,schema_path_sensor,root_data_folder):
+    drop_all_tables()
+    reset_checkpoints(checkpoint_path_sensor,schema_path_sensor)
+    prepare_data(root_data_folder)
 
 def generate_measurements(start_date, end_date):
     date_range = pd.date_range(start=start_date, end=end_date, freq='H')
@@ -30,15 +49,6 @@ def generate_measurements(start_date, end_date):
                 data.append([date, f'Office {office}', f'Sensor {sensor}', 'humidity', humidity])
     
     return data
-
-def generate_sensor_data(start_date, end_date,root_data_folder):
-    measurements = generate_measurements(start_date, end_date)
-    df = pd.DataFrame(measurements, columns=['EventTime', 'Office', 'Sensor', 'Measurement', 'Value'])
-    dfs=spark.createDataFrame(df).withColumn('EventTime',col('EventTime').cast('string'))
-    dfagg=dfs.groupBy('EventTime','Office')\
-        .agg(collect_list(struct("Sensor", "Measurement", "Value"))\
-        .alias("Measurements"))
-    write_json_data(dfagg,f'{root_data_folder}/sensor')
 
 def generate_measurements_enhanced(start_date, end_date):
     date_range = pd.date_range(start=start_date, end=end_date, freq='H')
@@ -55,23 +65,16 @@ def generate_measurements_enhanced(start_date, end_date):
                              ,pressure])
     return data
 
-def generate_sensor_data_enhanced(start_date, end_date,root_data_folder):
-    measurements = generate_measurements_enhanced(start_date, end_date)
-    df = pd.DataFrame(measurements, columns=['EventTime', 'Office', 'Sensor', 'Measurement', 'Value','Pressure'])
-    dfs=spark.createDataFrame(df).withColumn('EventTime',col('EventTime').cast('string'))
-    dfagg=dfs.groupBy('EventTime','Office','Pressure')\
-        .agg(collect_list(struct("Sensor", "Measurement", "Value"))\
-        .alias("Measurements"))
-    write_json_data_enhanced(dfagg,f'{root_data_folder}/sensor')
-
 def write_json_data(df_sensor,sensor_folder):
     for row in df_sensor.collect():
         rowDict={'EventTime':row.EventTime,'Office':row.Office,
-                 'Measurements':{'Sensor':row.Measurements[0].Sensor, 'MeasurementType':row.Measurements[0].Measurement, 'MeasurementValue':row.Measurements[0].Value}}
+                 'Sensor':row.Sensor, 
+                 'MeasurementType':row.Measurement, 
+                 'MeasurementValue':row.Value}
         file_path=f"{sensor_folder}/{rowDict['Office']}_{rowDict['EventTime']}.json"
         with open(file_path, 'w') as f:
             json.dump(rowDict,f)
-        print (f'File written to {file_path}')
+        # print (f'File written to {file_path}')
         
     pass
 
@@ -79,28 +82,38 @@ def write_json_data(df_sensor,sensor_folder):
 def write_json_data_enhanced(df_sensor,sensor_folder):
     for row in df_sensor.collect():
         rowDict={'EventTime':row.EventTime,'Office':row.Office,
-                 'Measurements':{'Sensor':row.Measurements[0].Sensor, 'MeasurementType':row.Measurements[0].Measurement, 'MeasurementValue':row.Measurements[0].Value},                                  'Pressure':row.Pressure}
+                 'Sensor':row.Sensor, 
+                 'MeasurementType':row.Measurement, 
+                 'MeasurementValue':row.Value,
+                 'Pressure':row.Pressure}
         file_path=f"{sensor_folder}/{rowDict['Office']}_{rowDict['EventTime']}_enhanced.json"
         with open(file_path, 'w') as f:
             json.dump(rowDict,f)
-        print (f'File written to {file_path}')
+        # print (f'File written to {file_path}')
         
     pass
 
-def gernerate_persist_streaming_data(start_date, ndays,root_folder):
+def generate_persist_streaming_data(start_date, ndays,root_folder):
     end_date = start_date + timedelta(days=ndays)
-    generate_sensor_data(start_date, end_date,root_folder)
+    measurements = generate_measurements(start_date, end_date)
+    df = pd.DataFrame(measurements, columns=['EventTime', 'Office', 'Sensor', 'Measurement', 'Value'])
+    dfs=spark.createDataFrame(df).withColumn('EventTime',col('EventTime').cast('string'))
+    write_json_data(dfs,f'{root_data_folder}/sensor')
     pass
 
 
-def gernerate_persist_streaming_data_enhanced(start_date, ndays,root_folder):
+def generate_persist_streaming_data_enhanced(start_date, ndays,root_folder):
     end_date = start_date + timedelta(days=ndays)
-    generate_sensor_data_enhanced(start_date, end_date,root_folder)
+    measurements = generate_measurements_enhanced(start_date, end_date)
+    df = pd.DataFrame(measurements, columns=['EventTime', 'Office', 'Sensor', 'Measurement', 'Value','Pressure'])
+    dfs=spark.createDataFrame(df).withColumn('EventTime',col('EventTime').cast('string'))
+    write_json_data_enhanced(dfs,f'{root_data_folder}/sensor')
+
     pass
 
 # COMMAND ----------
 
-root_data_folder='/Volumes/learn_adb_fikrat/bronze/landing/autoloader'
+# root_data_folder='/Volumes/learn_adb_fikrat/bronze/landing/autoloader'
 
 # COMMAND ----------
 
@@ -118,8 +131,8 @@ root_data_folder='/Volumes/learn_adb_fikrat/bronze/landing/autoloader'
 
 # COMMAND ----------
 
-file_count = len(dbutils.fs.ls(f'{root_data_folder}/sensor'))
-print(file_count)
+# file_count = len(dbutils.fs.ls(f'{root_data_folder}/sensor'))
+# print(file_count)
 
 # COMMAND ----------
 

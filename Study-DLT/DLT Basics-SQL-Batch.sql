@@ -1,7 +1,7 @@
 -- Databricks notebook source
 CREATE OR REFRESH MATERIALIZED VIEW dlt_batch_bronze
 AS
-select * from csv.`dbfs:/FileStore/flights/`
+select * from parquet.`dbfs:/databricks-datasets/amazon/test4K/`
 
 -- COMMAND ----------
 

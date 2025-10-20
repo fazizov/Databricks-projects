@@ -1,26 +1,24 @@
 # Databricks notebook source
 # MAGIC %sql
 # MAGIC USE CATALOG learn_adb_fikrat;
-# MAGIC CREATE DATABASE logs;
+# MAGIC CREATE SCHEMA bronze;
+# MAGIC CREATE SCHEMA silver;
+# MAGIC CREATE SCHEMA gold;
+# MAGIC CREATE SCHEMA IF NOT EXISTS logs;
 # MAGIC DROP TABLE IF EXISTS bronze.vehicle_accidents;
 # MAGIC DROP TABLE IF EXISTS bronze.vehicle_accidents_cleansed;
 # MAGIC DROP TABLE IF EXISTS bronze.Accident_locations
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC CREATE DATABASE logs
+# DBTITLE 1,Cleaning destination  path
+dbutils.fs.rm(dest_file_path,True)
 
 # COMMAND ----------
 
 root_folder='/Volumes/learn_adb_fikrat/bronze/landing/crash-data/'
 source_file_path=f'{root_folder}/Motor_Vehicle_Collisions_-_Crashes.csv'
 dest_file_path=f'{root_folder}/vehicle_collisions'
-
-# COMMAND ----------
-
-# DBTITLE 1,Cleaning destination  path
-dbutils.fs.rm(dest_file_path,True)
 
 # COMMAND ----------
 
@@ -48,11 +46,11 @@ save_one_day(dfd,'01/01/2013',dest_file_path)
 
 # COMMAND ----------
 
-save_one_day(dfd,'01/01/2014',dest_file_path)
+save_one_day(dfd,'01/02/2013',dest_file_path)
 
 # COMMAND ----------
 
-save_one_day(dfd,'01/01/2015',dest_file_path)
+save_one_day(dfd,'01/03/2013',dest_file_path)
 
 # COMMAND ----------
 
