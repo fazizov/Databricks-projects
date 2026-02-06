@@ -1,0 +1,23 @@
+resources:
+  schemas:
+    elite_3e:
+      name: elite_3e
+      catalog_name: ${var.catalog_name}
+      grants:
+        - principal: branden.shin@slalom.com
+          privileges:
+            - SELECT
+        - principal: fikrat.azizov@slalom.com
+          privileges:
+            - MANAGE
+    workday:
+      name: workday
+      catalog_name: ${var.catalog_name}
+      grants:
+        - principal: branden.shin@slalom.com
+          privileges:
+            - SELECT
+        - principal: fikrat.azizov@slalom.com
+          privileges:
+            - MANAGE
+

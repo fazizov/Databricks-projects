@@ -2,8 +2,8 @@ from pyspark import pipelines as dp
 from utilities.schemas import bronze_schema,silver_schema
 import pyspark.sql.functions as F
 
-dp.create_streaming_table(name='vehicle_accidents_stream')
 #Ingesting from 2 flows
+dp.create_streaming_table(name='vehicle_accidents_stream')
 @dp.append_flow (name='vehicle_accidents_flw1',target='vehicle_accidents_stream')
 def vehicle_accidents_flw1():
   file_path='/Volumes/learn_adb_fikrat/bronze/landing/crash-data/vehicle_collisions/01-02-2013/'
@@ -43,3 +43,4 @@ def vehicle_accidents_cleansed_stream():
         .filter(F.col('ACCIDENT_DATE_TIME').isNotNull())    
     
     return df
+

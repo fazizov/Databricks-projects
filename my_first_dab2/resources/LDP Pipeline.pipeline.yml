@@ -1,0 +1,25 @@
+id: cfe0c903-662b-46a5-a6c2-bace3ef906fc
+pipeline_type: WORKSPACE
+name: LDP Pipeline
+configuration:
+  source_path: /Volumes/learn_adb_fikrat/bronze/landing/crash-data/vehicle_collisions/
+  uc_name: learn_adb_fikrat
+libraries:
+  - glob:
+      include: /Workspace/Users/fikrat.azizov@slalom.com/Databricks-projects/Study
+        Lakeflow Declarative Pipelines/Python/DLP-Python/Stream7/**
+schema: Bronze
+continuous: false
+development: false
+photon: true
+edition: ADVANCED
+channel: CURRENT
+catalog: learn_adb_fikrat
+serverless: true
+event_log:
+  name: events
+  schema: ldp_logs
+  catalog: learn_adb_fikrat
+root_path: /Workspace/Users/fikrat.azizov@slalom.com/Databricks-projects/Study
+  Lakeflow Declarative Pipelines/Python/DLP-Python
+environment: {}

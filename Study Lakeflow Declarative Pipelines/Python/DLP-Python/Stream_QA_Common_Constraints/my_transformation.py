@@ -15,14 +15,9 @@ def bronze_vehicle_crashes():
      .withColumn('Bronze_Ingestion_Timestamp',F.current_timestamp())
 
 
-# Silver transformations: Data cleansing and schema standarization with QA control
-
-#Combined expectations
-expectations={"comb_valid_BOROUGH": "BOROUGH IS NOT NULL","comb_valid_zipcode":"ZIP_CODE IS NOT NULL"}
+# Silver transformations: Data cleansing and schema standarization 
 
 @dp.table(name='silver.vehicle_accidents_cleansed_stream')
-@dp.expect_all_or_drop(expectations)    
-
 def vehicle_accidents_cleansed_stream():
     df = spark.readStream.table('vehicle_accidents_stream')
     for clm in df.schema:
@@ -34,20 +29,44 @@ def vehicle_accidents_cleansed_stream():
         F.concat(F.col('CRASH_DATE'), F.lit(' '), F.lpad(F.col('CRASH_TIME'), 5, '0')), 'MM/dd/yyyy HH:mm'))\
         .drop('LATITUDE','LONGITUDE','CRASH_DATE','CRASH_TIME')\
         .filter(F.col('ACCIDENT_DATE_TIME').isNotNull())    
-    
     return df
 
+expectations={"valid_BOROUGH": "BOROUGH IS NOT NULL",
+              "valid_LOCATION": "LOCATION IS NOT NULL",
+              "valid_zipcode":"ZIP_CODE IS NOT NULL"}
 @dp.table(name='silver.accident_locations')
+@dp.expect_all_or_drop(expectations)
 def accident_locations():
-    return spark.readStream.table('silver.vehicle_accidents_cleansed_stream')\
-        .select('ZIP_CODE','BOROUGH').distinct()
-        
-#PK/duplicate validations
+    return spark.readStream\
+        .table('silver.vehicle_accidents_cleansed_stream')\
+        .select('ZIP_CODE','LOCATION','BOROUGH').distinct()
+
+@dp.table(name='silver.boroughs')
+@dp.expect_or_drop('empty_borough',"BOROUGH IS NOT NULL")
+def accident_boroughs():
+    return spark.readStream\
+        .table('silver.vehicle_accidents_cleansed_stream')\
+        .filter(F.col('BOROUGH') !='BROOKLYN')\
+        .select('BOROUGH').distinct()
+
+#PK/duplicate validations (Validating ZIP_CODE as a PK)
 @dp.materialized_view(name='silver.accident_locations_QA')
-@dp.expect_or_drop("Duplicate items","count>1")
+@dp.expect_or_fail("No duplicate items","count=1")
 def accident_locations_QA():
     return spark.table('silver.accident_locations')\
-        .groupBy('ZIP_CODE').agg(F.count(F.col('BOROUGH'))\
+        .groupBy('ZIP_CODE')\
+        .agg(F.count(F.col('ZIP_CODE'))\
         .alias('count'))\
         .withColumn('QA_Rule',F.lit('PK validations'))
-        
+
+#FK validations (Validating BOROUGH match)        
+@dp.materialized_view(name='silver.boroughs_QA')
+@dp.expect_or_fail("No FK violations","FK_BOROUGH IS NOT NULL")
+def accident_locations_QA():
+    df1=spark.table('silver.accident_locations').alias('left')
+    df2=spark.table('silver.boroughs').alias('right')
+    return df1.join(df2,df1.BOROUGH==df2.BOROUGH,'left')\
+        .select('left.*',F.col('right.BOROUGH').alias('FK_BOROUGH'))\
+        .withColumn('QA_Rule',F.lit('FK validations'))
+
+

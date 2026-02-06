@@ -21,10 +21,9 @@ expectations={"comb_valid_BOROUGH": "BOROUGH IS NOT NULL","comb_valid_zipcode":"
 #First uncomment fail expectation
 @dp.table(name='silver.vehicle_accidents_cleansed_stream')
 # @dp.expect_or_fail('valid_BOROUGH', "BOROUGH IS NOT NULL")
-@dp.expect('valid_zipcode', 'ZIP_CODE IS NOT NULL')
+# @dp.expect('valid_zipcode', 'ZIP_CODE IS NOT NULL')
 @dp.expect_or_drop('valid_VEHICLE_TYPE_CODE_1', "VEHICLE_TYPE_CODE_1 ='TAXI'")    
 @dp.expect_all_or_drop(expectations)    
-
 
 def vehicle_accidents_cleansed_stream():
     df = spark.readStream.table('vehicle_accidents_stream')

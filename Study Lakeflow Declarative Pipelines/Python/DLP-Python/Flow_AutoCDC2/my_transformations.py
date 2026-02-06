@@ -12,6 +12,6 @@ dp.create_auto_cdc_flow(flow_name='sales_orders_scd2',
     apply_as_deletes = F.expr("_change_type = 'delete'"),
     except_column_list = ["_change_type", "_commit_version","_commit_timestamp"],
     stored_as_scd_type = 2,
-    track_history_column_list = ["order_status"],
-    track_history_except_column_list =["order_date"]
+    track_history_column_list = ["order_status"]
+    # track_history_except_column_list =["order_date"]
     )

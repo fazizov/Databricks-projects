@@ -1,0 +1,27 @@
+resources:
+  jobs:
+    etl_bronze:
+      name: etl-bronze
+      queue:
+        enabled: true
+
+      tasks:
+        - task_key: mssql-bronze
+          notebook_task:
+            notebook_path: /Workspace/Users/fikrat.azizov@slalom.com/Databricks-projects/POC-Cooley/Cooley_DAB/MSSQL-Bronze
+      email_notifications:
+        on_failure:
+          - fikrat.azizov@slalom.com
+      permissions:
+          - user_name: fikrat.azizov@slalom.com
+            level: CAN_MANAGE
+          
+          - user_name: branden.shin@slalom.com
+            level: CAN_VIEW
+
+      trigger:
+
+        # Run this job every day, exactly one day from the last run; see https://docs.databricks.com/api/workspace/jobs/create#trigger
+        periodic:
+          interval: 1
+          unit: DAYS

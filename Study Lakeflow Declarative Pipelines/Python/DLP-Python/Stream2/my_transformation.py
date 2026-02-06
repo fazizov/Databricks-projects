@@ -4,7 +4,7 @@ import pyspark.sql.functions as F
 
 file_path= spark.conf.get('source_path')
 
-@dp.table(name='vehicle_accidents_stream_tmp',temporary=True)
+@dp.table(name='vehicle_accidents_stream_tmp',private=True)
 def bronze_vehicle_crashes():
   return spark.readStream.format('cloudFiles')\
      .option("cloudFiles.format", "csv")\
